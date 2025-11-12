@@ -96,32 +96,35 @@ The project is divided into three sequential notebooks located in the `/notebook
 ---
 
 ## 🗂️ Repository Structure
-📁 astro-classifier-rf/
-├── 📄 .gitignore
-├── 📄 LICENSE
-├── 📄 README.md
-├── 📄 requirements.txt
-│
-├── 📁 data/
-│ ├── 📁 raw/
-│ │ └── 📄 .gitkeep
-│ └── 📁 processed/
-│ └── 📄 .gitkeep
-│
-├── 📁 notebooks/
-│ ├── 📄 01_Data_Acquisition_and_Cleaning.ipynb
-│ ├── 📄 02_Exploratory_Data_Analysis.ipynb
-│ └── 📄 03_Model_Training_and_Evaluation.ipynb
-│
-└── 📁 results/
-  ├── 📁 figures/
-  │ ├── 📄 01_class_distribution.png
-  │ ├── 📄 02_h_moid_distributions.png
-  │ ├── 📄 03_correlation_heatmap.png
-  │ ├── 📄 04_confusion_matrix.png
-  │ └── 📄 05_feature_importance.png
-  └── 📁 models/
-    └── 📄 rf_pha_classifier.joblib
+## 📁 Repository Structure
+
+astro-classifier-rf/
+|
++-- .gitignore
++-- LICENSE
++-- README.md
++-- requirements.txt
+|
++-- data/
+|   +-- raw/
+|   |   \-- .gitkeep
+|   \-- processed/
+|       \-- .gitkeep
+|
++-- notebooks/
+|   +-- 01_Data_Acquisition_and_Cleaning.ipynb
+|   +-- 02_Exploratory_Data_Analysis.ipynb
+|   \-- 03_Model_Training_and_Evaluation.ipynb
+|
++-- results/
+    +-- figures/
+    |   +-- 01_class_distribution.png
+    |   +-- 02_h_moid_distributions.png
+    |   +-- 03_correlation_heatmap.png
+    |   +-- 04_confusion_matrix.png
+    |   \-- 05_feature_importance.png
+    \-- models/
+        \-- rf_pha_classifier.joblib
 
 ---
 
