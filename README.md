@@ -1,4 +1,4 @@
-# 🚀 Astro-Classifier RF: Potentially Hazardous Asteroid Classification
+# 🚀 Asteroid Risk Prediction: Potentially Hazardous Asteroid Classification
 
 ![Python](https://img.shields.io/badge/Python-3.10%2B-blue)
 ![Libraries](https://img.shields.io/badge/Libraries-Pandas_|_Scikit--learn_|_Seaborn-orange)
