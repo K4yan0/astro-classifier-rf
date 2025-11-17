@@ -90,17 +90,18 @@ with tab1:
     st.markdown("This data is from NASA's [CNEOS 'Close Approach' API](https://ssd-api.jpl.nasa.gov/doc/cad.html). It lists known objects passing within 0.05 AU (approx. 7.5 million km) of Earth.")
 
     if st.button('Refresh NASA Data'):
-        st.cache_data.clear() # Clear cache to force new API call
+        st.cache_data.clear()
 
     ca_data = fetch_close_approaches()
 
     if ca_data is not None and not ca_data.empty:
-        st.dataframe(ca_data, use_container_width=True, hide_index=True)
+
+        st.dataframe(ca_data.drop(columns=['datetime']), use_container_width=True, hide_index=True)
 
         st.subheader("Approach Visualization")
-        ca_data['label'] = ca_data['Close-Approach Date'].str.slice(0, 10) + " (" + ca_data['Object'] + ")"
 
-        st.line_chart(ca_data, x='label', y='Lunar Dist.', color="#FF0000")
+        st.line_chart(ca_data, x='datetime', y='Lunar Dist.', color="#FF0000")
+
         st.caption("Distance in Lunar Distances (LD). 1 LD = distance from Earth to the Moon.")
 
     elif ca_data is not None and ca_data.empty:
