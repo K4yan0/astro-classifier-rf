@@ -1,11 +1,10 @@
-# app.py
 import streamlit as st
 import pandas as pd
 import joblib
 import requests
-from datetime import datetime
+import altair as alt
+import plotly.express as px
 
-# Page Configuration
 st.set_page_config(
     page_title="Astro-Classifier RF",
     page_icon="🚀",
@@ -16,11 +15,8 @@ MODEL_PATH = 'results/models/rf_pha_classifier.joblib'
 CNEOS_API_URL = "https://ssd-api.jpl.nasa.gov/cad.api"
 
 
-# --- Helper Functions ---
-
 @st.cache_data
 def load_model(path):
-    """Loads the pre-trained RF model."""
     try:
         model = joblib.load(path)
         return model
@@ -33,7 +29,6 @@ def load_model(path):
 
 @st.cache_data
 def fetch_close_approaches():
-    """Fetches upcoming close-approach data from NASA's CNEOS API."""
     try:
         params = {
             'date-min': 'now',
@@ -49,25 +44,33 @@ def fetch_close_approaches():
         if data['count'] == '0':
             return pd.DataFrame(columns=['Object', 'Close-Approach Date', 'Distance (km)', 'Lunar Dist.', 'Size (m)', 'datetime'])
 
-        df = pd.DataFrame(data['data'], columns=data['fields'])
+        df_raw = pd.DataFrame(data['data'], columns=data['fields'])
 
-        df_cleaned = df[['des', 'cd', 'dist', 'h']]
-        df_cleaned.columns = ['Object', 'Close-Approach Date', 'Distance (AU)', 'H']
-
-        df_cleaned['H'] = pd.to_numeric(df_cleaned['H'])
-        df_cleaned['Distance (AU)'] = pd.to_numeric(df_cleaned['Distance (AU)'])
-
-        df_cleaned['Size (m)'] = 10**( (27.8 - df_cleaned['H']) / 5 )
+        objects = df_raw['des']
+        datetimes = pd.to_datetime(df_raw['cd'], errors='coerce')
+        dist_au = pd.to_numeric(df_raw['dist'], errors='coerce')
+        h_mag = pd.to_numeric(df_raw['h'], errors='coerce')
 
         AU_TO_KM = 149597870.7
         AU_TO_LD = 389.0
-        df_cleaned['Distance (km)'] = (df_cleaned['Distance (AU)'] * AU_TO_KM).round(0)
-        df_cleaned['Lunar Dist.'] = (df_cleaned['Distance (AU)'] * AU_TO_LD).round(1)
 
-        df_cleaned['datetime'] = pd.to_datetime(df_cleaned['Close-Approach Date'])
-        df_cleaned['Close-Approach Date'] = df_cleaned['datetime'].dt.strftime('%Y-%m-%d %H:%M')
+        dist_km = (dist_au * AU_TO_KM).round(0)
+        dist_ld = (dist_au * AU_TO_LD).round(1)
+        size_m = (10**( (27.8 - h_mag) / 5 )).round(1)
+        date_str = datetimes.dt.strftime('%Y-%m-%d %H:%M')
 
-        df_final = df_cleaned[['Object', 'Close-Approach Date', 'Distance (km)', 'Lunar Dist.', 'Size (m)', 'datetime']].sort_values(by='datetime')
+        df_final = pd.DataFrame({
+            'Object': objects,
+            'Close-Approach Date': date_str,
+            'Distance (km)': dist_km,
+            'Lunar Dist.': dist_ld,
+            'Size (m)': size_m,
+            'datetime': datetimes
+        })
+
+        df_final = df_final.dropna(subset=['datetime', 'Lunar Dist.'])
+
+        df_final = df_final.sort_values(by='datetime')
         return df_final
 
     except requests.exceptions.RequestException as e:
@@ -80,36 +83,53 @@ def fetch_close_approaches():
 st.title("🚀 Astro-Classifier RF & Threat Monitor")
 st.markdown("An app combining a Machine Learning model for **risk classification** and a live data monitor from **NASA**.")
 
-# load model
 model = load_model(MODEL_PATH)
 
 tab1, tab2 = st.tabs(["🛰️ Threat Monitor (Live NASA API)", "🔬 Risk Simulator (Our AI Model)"])
 
 with tab1:
     st.header("Upcoming Close Approaches (Next 60 Days)")
-    st.markdown("This data is from NASA's [CNEOS 'Close Approach' API](https://ssd-api.jpl.nasa.gov/doc/cad.html). It lists known objects passing within 0.05 AU (approx. 7.5 million km) of Earth.")
+    st.markdown("This data is from NASA's [CNEO 'Close Approach' API](https://ssd-api.jpl.nasa.gov/doc/cad.html). It lists known objects passing within 0.05 AU (approx. 7.5 million km) of Earth.")
 
     if st.button('Refresh NASA Data'):
-        st.cache_data.clear()
+        fetch_close_approaches.clear()
 
     ca_data = fetch_close_approaches()
 
     if ca_data is not None and not ca_data.empty:
 
-        st.dataframe(ca_data.drop(columns=['datetime']), use_container_width=True, hide_index=True)
+        display_cols = ['Object', 'Close-Approach Date', 'Distance (km)', 'Lunar Dist.', 'Size (m)']
+        st.dataframe(ca_data[display_cols], use_container_width=True, hide_index=True)
 
-        st.subheader("Approach Visualization")
+        st.subheader("Approach Visualization (Plotly - Bars)")
 
-        st.line_chart(ca_data, x='datetime', y='Lunar Dist.', color="#FF0000")
+        try:
+            fig = px.bar(
+                ca_data,
+                x='datetime',
+                y='Lunar Dist.',
+                color_discrete_sequence=['#FF4B4B'],
+                hover_data=['Object', 'Close-Approach Date', 'Size (m)', 'Distance (km)'],
+                labels={
+                    'datetime': "Approach Date",
+                    'Lunar Dist.': 'Distance (Lunar Dist.)',
+                    'Size (m)': 'Estimated Size (m)'
+                },
+                title="Asteroid Approaches: Distance"
+            )
 
-        st.caption("Distance in Lunar Distances (LD). 1 LD = distance from Earth to the Moon.")
+            st.plotly_chart(fig, use_container_width=True)
+            st.caption("Chart generated by Plotly Express. Hover over the bars for details.")
+
+        except Exception as e:
+            st.error(f"Error generating Plotly chart (Bars): {e}")
+
 
     elif ca_data is not None and ca_data.empty:
         st.success("Good news! No close approaches (within 0.05 AU) are currently listed by NASA for the next 60 days.")
     else:
         st.error("Could not load close-approach data.")
 
-#risk simulator
 with tab2:
     st.header("Risk Classification Simulator")
     st.markdown("Use our trained Random Forest model to see how it classifies an object based on its parameters. This implements our `rf_pha_classifier.joblib`.")
@@ -132,7 +152,6 @@ with tab2:
         submit_button = st.form_submit_button(label='Run Prediction')
 
     if submit_button:
-        # Create DataFrame in the same order the model was trained on
         input_data = pd.DataFrame(
             [[H, e, a, q, i, moid]],
             columns=['H', 'e', 'a', 'q', 'i', 'moid']
