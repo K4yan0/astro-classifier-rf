@@ -125,7 +125,7 @@ astro-classifier-rf/
 +-- .gitignore
 +-- LICENSE
 +-- README.md
-+-- app.py                  <-- The Streamlit web application
++-- app.py                  
 +-- requirements.txt
 |
 +-- data/
@@ -144,7 +144,7 @@ astro-classifier-rf/
     |   +-- 01_class_distribution.png
     |   +-- ... (other plots) ...
     |   +-- 05_feature_importance.png
-    |   \-- app_monitor.png     <-- (Example app screenshot)
+    |   \-- app_monitor.png 
     \-- models/
         \-- rf_pha_classifier.joblib
 ````
